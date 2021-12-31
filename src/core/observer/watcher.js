@@ -27,7 +27,7 @@ let uid = 0
 export default class Watcher {
   vm: Component;
   expression: string;
-  cb: Function;
+  cb: Function; // callback的缩写
   id: number;
   deep: boolean;
   user: boolean;
@@ -57,6 +57,7 @@ export default class Watcher {
     vm._watchers.push(this)
     // options
     if (options) {
+      // 为什么要取反两次？不懂
       this.deep = !!options.deep
       this.user = !!options.user
       this.lazy = !!options.lazy

@@ -70,6 +70,7 @@ export class Observer {
 
   /**
    * Observe a list of Array items.
+   * 为传入数组的每个元素做一遍observe
    */
   observeArray (items: Array<any>) {
     for (let i = 0, l = items.length; i < l; i++) {
@@ -112,9 +113,15 @@ export function observe (value: any, asRootData: ?boolean): Observer | void {
     return
   }
   let ob: Observer | void
+
+  /**
+   * 如果Vue监测到要observe的对象上已经有observer，
+   * 那么Vue什么也不会做（哪怕是稍微检查一下这个observer）
+   */
   if (hasOwn(value, '__ob__') && value.__ob__ instanceof Observer) {
     ob = value.__ob__
-  } else if (
+  }
+  else if (
     shouldObserve &&
     !isServerRendering() &&
     (Array.isArray(value) || isPlainObject(value)) &&
@@ -131,6 +138,7 @@ export function observe (value: any, asRootData: ?boolean): Observer | void {
 
 /**
  * Define a reactive property on an Object.
+ * 为一个对象做变化观测
  */
 export function defineReactive (
   obj: Object,
@@ -142,6 +150,8 @@ export function defineReactive (
   const dep = new Dep()
 
   const property = Object.getOwnPropertyDescriptor(obj, key)
+
+  // 这里说明，Vue的变化观测如果遇到configurable为false的属性，就不会起作用
   if (property && property.configurable === false) {
     return
   }
@@ -154,6 +164,12 @@ export function defineReactive (
   }
 
   let childOb = !shallow && observe(val)
+
+  /**
+   * 核心代码，劫持getter和setter
+   * 在getter中收集依赖
+   * 在setter中触发依赖更新
+   */
   Object.defineProperty(obj, key, {
     enumerable: true,
     configurable: true,
@@ -173,6 +189,12 @@ export function defineReactive (
     set: function reactiveSetter (newVal) {
       const value = getter ? getter.call(obj) : val
       /* eslint-disable no-self-compare */
+      /**
+       * 此处的self-compare是为了解决issue#4236的问题
+       * 当某个属性的值为NaN的时候，即使它不改变，也会触发setter无限循环，
+       * 因为表达式NaN === NaN的结果是false，
+       * 会无限触发通知依赖更新
+       */
       if (newVal === value || (newVal !== newVal && value !== value)) {
         return
       }

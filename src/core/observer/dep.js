@@ -11,8 +11,14 @@ let uid = 0
  * directives subscribing to it.
  */
 export default class Dep {
+
   static target: ?Watcher;
   id: number;
+  
+  /**
+   * subs是Subscribers(订阅者)的缩写
+   * 它是一个以Watcher为元素的数组
+   */
   subs: Array<Watcher>;
 
   constructor () {
@@ -35,7 +41,8 @@ export default class Dep {
   }
 
   notify () {
-    // stabilize the subscriber list first
+    
+    // 浅拷贝this.subs到subs
     const subs = this.subs.slice()
     if (process.env.NODE_ENV !== 'production' && !config.async) {
       // subs aren't sorted in scheduler if not running async
@@ -43,6 +50,8 @@ export default class Dep {
       // order
       subs.sort((a, b) => a.id - b.id)
     }
+
+    // 逐个通知Watcher去更新视图
     for (let i = 0, l = subs.length; i < l; i++) {
       subs[i].update()
     }
